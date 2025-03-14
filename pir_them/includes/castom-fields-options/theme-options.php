@@ -69,10 +69,10 @@ Container::make('theme_options', __('Наши акции'))
 
     Field::make('text', 'crb_set_percentage_for_pickup', __('Процент за самовывоз'))
       ->set_width(24),
-      Field::make('separator', 'crb_separator_quantity', __('Скидка за сет'))
+    Field::make('separator', 'crb_separator_quantity', __('Скидка за сет'))
       ->set_width(49),
-      Field::make('text', 'crb_set_percentage_for_birthday', __('Процент за день рождения'))
-        ->set_width(24),
+    Field::make('text', 'crb_set_percentage_for_birthday', __('Процент за день рождения'))
+      ->set_width(24),
     Field::make('separator', 'crb_separator_bell', __(''))
       ->set_width(24),
 
@@ -156,7 +156,19 @@ Container::make('theme_options', __('Настройки сайта'))
     Field::make('text', 'crb_bottom_footer_terms', __('Пользовательское соглашение'))
       ->set_width(40)
       ->set_help_text('Укажите ссылку на страницу пользовательского соглашения'),
-    // )
+    // Field::make('html', 'custom_hint')
+    //   ->set_html('<p style="color: gray;">Это справочная информация</p>')
+    //   ->set_width(40),
+
+
+
+    Field::make('html', 'custom_field_html')
+      ->set_html('
+      <p style="color: gray;">API Категории товаров</p>
+      <input type="text" style="width:40%;" id="carbon-copy-input-categories" value="https://ohpirogi24.ru/wp-json/custom/v1/product-categories/" /><button type="button" class="button button-primary" id="carbon-copy-button-categories">Копировать</button>
+      <br>
+      <p style="color: gray;">API Товары</p>
+      <input type="text" style="width:40%;" id="carbon-copy-input-products" value="https://ohpirogi24.ru/wp-json/custom/v1/products/" /><button type="button" class="button button-primary" id="carbon-copy-button-products">Копировать</button>'),
   ));
 
 
