@@ -621,9 +621,13 @@ defined('ABSPATH') || exit;
 // 	echo "Cookie 'ym_uid' не установлена.";
 // }
 // echo '</pre>';
-	
+		$log_order_json = file_get_contents(__DIR__ . "/log_order.json");
+		$log_order = json_decode($log_order_json, true);
 
-		if ($is_user_reg == 0) {
+		// print_r($log_order);
+
+		// if ($is_user_reg == 0 && wc_get_order($order->get_id())) {
+		if ($is_user_reg == 0 && !in_array($order->get_id(), $log_order)) {
 
 			$delivery_type = '';
 			if ($order->get_meta('billing_deliverymethod') == 'kurer') {
@@ -704,7 +708,7 @@ defined('ABSPATH') || exit;
 			// 	}
 			// }
 			// echo '</pre>';
-
+	
 			// Формируем массив данных заказа
 			$order_data = [
 				'userid' => $user_id,
@@ -738,8 +742,9 @@ defined('ABSPATH') || exit;
 			}
 			// echo '<pre>';
 			// print_r($order->get_id());
+			// print_r($order_data);
 			// echo '</pre>';
-
+	
 
 
 
@@ -753,11 +758,14 @@ defined('ABSPATH') || exit;
 
 
 
-			if (is_wp_error($response)) {
-				error_log('Ошибка отправки: ' . $response->get_error_message());
-			} else {
-				error_log('Успешный ответ: ' . wp_remote_retrieve_body($response));
-			}
+			// if (is_wp_error($response)) {
+			// 	error_log('Ошибка отправки: ' . $response->get_error_message());
+			// } else {
+			// 	error_log('Успешный ответ: ' . wp_remote_retrieve_body($response));
+			// }
+	
+			$log_order[] = $order->get_id();
+			file_put_contents(__DIR__ . "/log_order.json", json_encode($log_order));
 		}
 
 
