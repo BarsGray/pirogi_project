@@ -69,9 +69,9 @@ defined('ABSPATH') || exit;
 			// }
 	
 
-			// echo '<pre>';
-			// var_dump($order);
-			// echo '</pre>';
+			echo '<pre>';
+			var_dump($order);
+			echo '</pre>';
 	
 			if (session_status() == PHP_SESSION_NONE) {
 				session_start();
