@@ -411,6 +411,191 @@ add_action('wp_ajax_custom_add_to_cart', 'custom_ajax_add_to_cart');
 
 
 
+function add_title_to_post_thumbnail_alt($html, $post_id, $post_thumbnail_id) {
+    // Получаем название поста или продукта
+    $title = get_the_title($post_id);
+
+    // Добавляем атрибут alt с названием продукта
+    $html = str_replace('<img', '<img alt="' . esc_attr($title) . '"', $html);
+
+    return $html;
+}
+add_filter('post_thumbnail_html', 'add_title_to_post_thumbnail_alt', 10, 3);
+
+
+// +++++++++++++ получение id всех заказов и вывод в json формате по ссылке ?export_orders=13 +++++++++++++
+// add_action('init', function () {
+//   if (!is_admin() && isset($_GET['export_orders']) && $_GET['export_orders'] == '13') {
+//       if (!current_user_can('manage_woocommerce')) {
+//           wp_die('Недостаточно прав');
+//       }
+
+//       $args = array(
+//           'limit' => -1,
+//           'return' => 'ids',
+//       );
+
+//       $order_ids = wc_get_orders($args);
+
+//       $json = json_encode($order_ids, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE);
+
+//       $upload_dir = wp_upload_dir();
+//       $file_path = $upload_dir['basedir'] . '/order_ids.json';
+
+//       file_put_contents($file_path, $json);
+
+//       echo 'Файл успешно создан: <a href="' . esc_url($upload_dir['baseurl'] . '/order_ids.json') . '" target="_blank">Скачать</a>';
+//       exit;
+//   }
+// });
+
+
+
+
+
+// add_action('init', function () {
+//   if (isset($_GET['export_orders']) && $_GET['export_orders'] == '1') {
+//       $args = array(
+//           'limit'  => -1,
+//           'return' => 'ids',
+//       );
+
+//       $order_ids = wc_get_orders($args);
+
+//       header('Content-Type: application/json; charset=utf-8');
+//       header('Cache-Control: no-cache, no-store, must-revalidate');
+//       header('Pragma: no-cache');
+//       header('Expires: 0');
+
+//       echo json_encode($order_ids, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE);
+//       exit;
+//   }
+// });
+// ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+
+// +++++++++++++ api id всех заказов и вывод в json формате по ссылке https://ohpirogi24.ru/wp-json/ohpir/v1/log_order/ +++++++++++++
+add_action('rest_api_init', function () {
+  register_rest_route('ohpir/v1', '/log_order/', [
+    'methods' => 'GET',
+    'callback' => 'ohpir_get_data_json',
+    'permission_callback' => '__return_true',
+  ]);
+});
+
+function ohpir_get_data_json()
+{
+  $path = get_stylesheet_directory() . '/woocommerce/checkout/log_order.json';
+
+  if (!file_exists($path)) {
+    return new WP_Error('not_found', 'Файл не найден', ['status' => 404]);
+  }
+
+  $json = file_get_contents($path);
+  $data = json_decode($json, true);
+
+  return rest_ensure_response($data);
+}
+// ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+
+// ++++++++++++++++++++++++++++++++ API: категории товаров и товары  ++++++++++++++++++++++++++++++++
+function get_product_categories_json()
+{
+  $categories = get_terms(array(
+    'taxonomy' => 'product_cat', // Таксономия категорий товаров в WooCommerce
+    'hide_empty' => false,         // Показывать пустые категории
+  ));
+
+  if (is_wp_error($categories)) {
+    wp_send_json_error('Ошибка получения категорий');
+  }
+
+  $result = array();
+
+  foreach ($categories as $category) {
+    $result[] = array(
+      'id' => $category->term_id,
+      'name' => $category->name,
+      'parent' => $category->parent, // ID родительской категории
+    );
+  }
+
+  wp_send_json($result);
+}
+
+// Добавляем кастомный REST API endpoint
+add_action('rest_api_init', function () {
+  register_rest_route('custom/v1', '/product-categories/', array(
+    'methods' => 'GET',
+    'callback' => 'get_product_categories_json',
+    'permission_callback' => '__return_true' // Разрешаем доступ без авторизации
+  ));
+});
+
+
+
+
+function get_products_with_variations_json() {
+  $args = array(
+      'post_type'      => 'product',
+      'posts_per_page' => -1, // Получить все товары
+      'post_status'    => 'publish',
+  );
+
+  $products = get_posts($args);
+  $result   = array();
+
+  foreach ($products as $product_post) {
+      $product_id = $product_post->ID;
+      $product    = wc_get_product($product_id);
+
+      // Получаем ID категорий
+      $categories = wp_get_post_terms($product_id, 'product_cat', array('fields' => 'ids'));
+
+      // Данные товара
+      $product_data = array(
+          'id'         => $product_id,
+          'name'       => $product->get_name(),
+          'price'      => $product->get_price(), // Основная цена товара
+          'categories' => $categories, // Массив ID категорий
+          'variations' => array(), // Сюда добавим вариации
+      );
+
+      // Проверяем, является ли товар вариативным
+      if ($product->is_type('variable')) {
+          $product_data['price'] = null; // Основной товар не имеет фиксированной цены
+
+          $variations = $product->get_children(); // Получаем ID вариаций
+
+          foreach ($variations as $variation_id) {
+              $variation = wc_get_product($variation_id);
+              $product_data['variations'][] = array(
+                  'id'    => $variation_id,
+                  'price' => $variation->get_price(),
+                  'attributes' => $variation->get_attributes(), // Атрибуты вариации
+              );
+          }
+      }
+
+      $result[] = $product_data;
+  }
+
+  wp_send_json($result);
+}
+
+// Регистрируем API endpoint
+add_action('rest_api_init', function () {
+  register_rest_route('custom/v1', '/products/', array(
+      'methods'  => 'GET',
+      'callback' => 'get_products_with_variations_json',
+      'permission_callback' => '__return_true'
+  ));
+});
+// ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+
+
 
 // Функция для получения изображения в полном размере
 // function get_full_size_image($size)
@@ -458,6 +643,33 @@ add_action('wp_ajax_custom_add_to_cart', 'custom_ajax_add_to_cart');
 //     $size['crop']   = 0;
 //     return $size;
 // }\
+
+function enqueue_admin_scripts()
+{
+  wp_add_inline_script('jquery', "
+      jQuery(document).ready(function($) {
+          $('#carbon-copy-button-orders').on('click', function() {
+              var copyTextOrders = $('#carbon-copy-input-orders');
+              copyTextOrders.select();
+              document.execCommand('copy');
+              alert('Скопировано: ' + copyTextOrders.val());
+          });
+          $('#carbon-copy-button-categories').on('click', function() {
+              var copyTextСategories = $('#carbon-copy-input-categories');
+              copyTextСategories.select();
+              document.execCommand('copy');
+              alert('Скопировано: ' + copyTextСategories.val());
+          });
+          $('#carbon-copy-button-products').on('click', function() {
+              var copyTextProducts = $('#carbon-copy-input-products');
+              copyTextProducts.select();
+              document.execCommand('copy');
+              alert('Скопировано: ' + copyTextProducts.val());
+          });
+      });
+  ");
+}
+add_action('admin_enqueue_scripts', 'enqueue_admin_scripts');
 
 add_action('admin_head', 'my_custom_styles');
 function my_custom_styles()

@@ -621,13 +621,22 @@ defined('ABSPATH') || exit;
 // 	echo "Cookie 'ym_uid' не установлена.";
 // }
 // echo '</pre>';
-		$log_order_json = file_get_contents(__DIR__ . "/log_order.json");
-		$log_order = json_decode($log_order_json, true);
+	
 
-		// print_r($log_order);
 
-		// if ($is_user_reg == 0 && wc_get_order($order->get_id())) {
-		if ($is_user_reg == 0 && !in_array($order->get_id(), $log_order)) {
+
+
+
+
+	
+			$order_ids_json = file_get_contents(__DIR__ . "/order_ids.json");
+			$order_ids = json_decode($order_ids_json, true);
+		// echo '<pre>';
+		// print_r($order_ids_check);
+		// echo in_array($order->get_id(), $order_ids_check);
+		// echo '</pre>';
+
+		if ($is_user_reg == 0 && !in_array($order->get_id(), $order_ids)) {
 
 			$delivery_type = '';
 			if ($order->get_meta('billing_deliverymethod') == 'kurer') {
@@ -763,17 +772,21 @@ defined('ABSPATH') || exit;
 			// } else {
 			// 	error_log('Успешный ответ: ' . wp_remote_retrieve_body($response));
 			// }
-	
+
+			$order_ids_get_args = array(
+				'limit' => -1,
+				'return' => 'ids',
+			);
+			$order_ids_get = wc_get_orders($order_ids_get_args);
+			
+			file_put_contents(__DIR__ . "/order_ids.json", json_encode($order_ids_get));
+
+
+			$log_order_json = file_get_contents(__DIR__ . "/log_order.json");
+			$log_order = json_decode($log_order_json, true);
 			$log_order[] = $order->get_id();
 			file_put_contents(__DIR__ . "/log_order.json", json_encode($log_order));
 		}
-
-
-
-
-
-
-
 
 
 		?>

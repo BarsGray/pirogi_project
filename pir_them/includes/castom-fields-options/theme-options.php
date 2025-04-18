@@ -156,19 +156,24 @@ Container::make('theme_options', __('Настройки сайта'))
     Field::make('text', 'crb_bottom_footer_terms', __('Пользовательское соглашение'))
       ->set_width(40)
       ->set_help_text('Укажите ссылку на страницу пользовательского соглашения'),
-    // Field::make('html', 'custom_hint')
-    //   ->set_html('<p style="color: gray;">Это справочная информация</p>')
-    //   ->set_width(40),
-
-
+    // )
 
     Field::make('html', 'custom_field_html')
       ->set_html('
       <p style="color: gray;">API Категории товаров</p>
-      <input type="text" style="width:40%;" id="carbon-copy-input-categories" value="https://ohpirogi24.ru/wp-json/custom/v1/product-categories/" /><button type="button" class="button button-primary" id="carbon-copy-button-categories">Копировать</button>
+      <input type="text" style="width:40%;" id="carbon-copy-input-categories" value="https://ohpirogi24.ru/wp-json/custom/v1/product-categories/" />
+      <button type="button" class="button button-primary" id="carbon-copy-button-categories">Копировать</button>
+      <br>
       <br>
       <p style="color: gray;">API Товары</p>
-      <input type="text" style="width:40%;" id="carbon-copy-input-products" value="https://ohpirogi24.ru/wp-json/custom/v1/products/" /><button type="button" class="button button-primary" id="carbon-copy-button-products">Копировать</button>'),
+      <input type="text" style="width:40%;" id="carbon-copy-input-products" value="https://ohpirogi24.ru/wp-json/custom/v1/products/" />
+      <button type="button" class="button button-primary" id="carbon-copy-button-products">Копировать</button>
+      <br>
+      <br>
+      <p style="color: gray;">API: список id заказов отправленных в CRM</p>
+      <input type="text" style="width:40%;" id="carbon-copy-input-orders" value="https://ohpirogi24.ru/wp-json/ohpir/v1/log_order/" />
+      <button type="button" class="button button-primary" id="carbon-copy-button-orders">Копировать</button>
+    '),
   ));
 
 

@@ -51,6 +51,7 @@ jQuery(document).ready(function ($) {
 	$('img[data-enlargeable]').addClass('img-enlargeable').click(function () {
 		if (winSize > 768) {
 			var src = $(this).attr('src');
+			var alt = $(this).attr('alt');
 			var ul_img_arr = $('.product_display_left ul img');
 			var ul_img_arr_li_items = [];
 			var ul_img_arr_src = [];
@@ -90,7 +91,7 @@ jQuery(document).ready(function ($) {
 				.html('<div class="container_gallery">'
 					+ ((arrows_for_modal[0]) ? arrows_for_modal[0] : '')
 					+ '<div class="gallery_image_box"><div class="gallery_general_img"><img class="" data-enlargeable="" src="'
-					+ src + '" alt=""></div></div><div class="gallery_close_btn"><span></span><span></span></div>'
+					+ src + '" alt="' + alt + '"></div></div><div class="gallery_close_btn"><span></span><span></span></div>'
 					+ ((arrows_for_modal[1]) ? arrows_for_modal[1] : '') + '</div>')
 				.appendTo('body');
 			$('.gallery_close_btn, .gallery_popup_sin').click(function (e) {

@@ -5,6 +5,8 @@
 	<meta charset="<?php bloginfo('charset'); ?>">
 	<meta name="viewport" content="width=device-width, minimum-scale=1">
 	<meta name="google-site-verification" content="6jI_8eTdfz4dhFIPNYfEzhKnvnkbYKqXLwWvEpOw4ws" />
+	<meta name="yandex-verification" content="94d23ebeb1958d74" />
+
 	<!-- initial-scale=1  -->
 	<link rel="profile" href="https://gmpg.org/xfn/11">
 	<!-- <title><?php // bloginfo('name'); 
@@ -14,7 +16,7 @@
 		{
 			"@context" : "https://schema.org",
 			"@type" : "WebSite",
-			"name" : «Ох пироги»,
+			"name" : "Ох пироги",
 			"alternateName" : "Ох пироги",
 			"url" : "https://ohpirogi24.ru/"
 		}
@@ -30,7 +32,43 @@
 
 	<meta name="theme-color" content="#fff">
 	<?php wp_head(); ?>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 </head>
+
+
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-GM9NWCXYSC"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'G-GM9NWCXYSC');
+</script>
+
 
 <body>
 
@@ -240,7 +278,7 @@
 								foreach ($item['crb_slide'] as $item_slide) {
 									?>
 									<a <?php echo ($item_slide['link']) ? 'href="' . $item_slide['link'] . '"' : ''; ?> class="swiper-slide">
-										<img src="<?php echo $item_slide['photo']; ?>" alt="">
+										<img src="<?php echo $item_slide['photo']; ?>" alt="<?php echo $item['title'];?>">
 									</a>
 									<?php
 									// echo '<pre>';

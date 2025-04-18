@@ -30,7 +30,7 @@ global $product;
 <div class="product_display_left">
 	<div class="product_main_img">
 		<div class="product_main_img">
-			<img data-enlargeable src="<?php echo wp_get_attachment_url($post_thumbnail_id); ?>" alt="">
+			<img data-enlargeable src="<?php echo wp_get_attachment_url($post_thumbnail_id); ?>" alt="<?php echo $product->get_name(); ?>">
 		</div>
 	</div>
 	<ul>
@@ -38,7 +38,7 @@ global $product;
 		$attachment_ids = $product->get_gallery_image_ids();
 		foreach ($attachment_ids as $attachment_id) {
 			$full_src = wp_get_attachment_image_src($attachment_id, 'full');
-			echo "<li><img src='" . $full_src[0] . "'></li>";
+			echo "<li><img src='" . $full_src[0] . "' alt='" . $product->get_name() . "'></li>";
 		}
 		?>
 	</ul>

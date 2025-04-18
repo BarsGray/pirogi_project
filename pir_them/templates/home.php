@@ -29,7 +29,7 @@ Template Name: home
             foreach ($item['crb_slide'] as $item_slide) {
               ?>
               <a <?php echo ($item_slide['link']) ? 'href="' . $item_slide['link'] . '"' : ''; ?> class="swiper-slide">
-                <img src="<?php echo $item_slide['photo']; ?>" alt="">
+                <img src="<?php echo $item_slide['photo']; ?>" alt="<?php echo $item['title'];?>">
               </a>
               <?php
               $GLOBALS['count_all_slides']++;
