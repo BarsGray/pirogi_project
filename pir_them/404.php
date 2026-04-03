@@ -307,3 +307,75 @@ function xml_woo_import_1c() {
 
 // запуск
 add_action('admin_post_run_xml_import', 'xml_woo_import_1c');
+
+
+😎
+
+
+
+
+
+
+
+
+
+
+// ===== Атрибуты (ПРАВИЛЬНО) =====
+$attributes = [];
+
+if (isset($item->значениеСвойств->значениеСвойства)) {
+
+    foreach ($item->значениеСвойств->значениеСвойства as $prop) {
+
+        $attr_name = (string)$prop->ид; // или Наименование
+        $attr_value = (string)$prop->значение;
+
+        if (!$attr_name || !$attr_value) continue;
+
+        $slug = wc_sanitize_taxonomy_name($attr_name);
+
+        // ===== создаём глобальный атрибут если нет =====
+        $attribute_id = wc_attribute_taxonomy_id_by_name($slug);
+
+        if (!$attribute_id) {
+            $attribute_id = wc_create_attribute([
+                'name' => $attr_name,
+                'slug' => $slug,
+                'type' => 'select',
+                'order_by' => 'menu_order',
+                'has_archives' => false,
+            ]);
+
+            delete_transient('wc_attribute_taxonomies');
+        }
+
+        $taxonomy = 'pa_' . $slug;
+
+        // регистрируем таксономию если ещё нет
+        if (!taxonomy_exists($taxonomy)) {
+            register_taxonomy(
+                $taxonomy,
+                'product',
+                [
+                    'hierarchical' => true,
+                    'show_ui' => false,
+                    'query_var' => true,
+                    'rewrite' => false,
+                ]
+            );
+        }
+
+        // добавляем значение
+        wp_set_object_terms($product->get_id(), $attr_value, $taxonomy, true);
+
+        $attributes[$taxonomy] = [
+            'name' => $taxonomy,
+            'value' => '',
+            'is_visible' => 1,
+            'is_variation' => 0,
+            'is_taxonomy' => 1,
+        ];
+    }
+
+    $product->set_attributes($attributes);
+}
