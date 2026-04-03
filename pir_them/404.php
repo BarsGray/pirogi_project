@@ -18,6 +18,27 @@ function xml_woo_import_run() {
         wp_die('Файл XML не найден!');
     }
 
+
+
+
+
+function delete_all_products() {
+
+    $products = get_posts([
+        'post_type' => 'product',
+        'numberposts' => -1,
+        'post_status' => 'any',
+    ]);
+
+    foreach ($products as $product) {
+        wp_delete_post($product->ID, true); // true = навсегда
+    }
+
+    echo "Все товары удалены";
+}
+
+
+add_action('init', 'delete_all_products');
     libxml_use_internal_errors(true);
     $xml = simplexml_load_file($file);
 
