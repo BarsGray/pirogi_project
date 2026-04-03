@@ -138,3 +138,172 @@ add_action('admin_post_run_xml_import', 'xml_woo_import_run');
 
 <?php
 get_footer();
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<?php
+/*
+Plugin Name: XML Import 1C WooCommerce
+*/
+
+if (!defined('ABSPATH')) exit;
+
+function xml_woo_import_1c() {
+
+    $file = WP_CONTENT_DIR . '/uploads/products.xml';
+
+    if (!file_exists($file)) {
+        wp_die('XML не найден');
+    }
+
+    $xml = simplexml_load_file($file);
+
+    if (!$xml) {
+        wp_die('Ошибка XML');
+    }
+
+    foreach ($xml->Предложения->Предложение as $offer) {
+
+        // ===== 1. SKU (Ид предложения) =====
+        $sku = (string)$offer->{'Ид'};
+        if (!$sku) continue;
+
+        // ===== 2. Название =====
+        $name = (string)$offer->{'Наименование'};
+
+        // ===== 3. Размеры =====
+        $width  = (string)$offer->{'Ширина'};
+        $length = (string)$offer->{'Длина'};
+        $height = (string)$offer->{'Высота'};
+
+        // ===== 4. Картинка =====
+        $image = (string)$offer->{'Картинка'};
+
+        // ===== 5. Проверка товара =====
+        $product_id = wc_get_product_id_by_sku($sku);
+
+        if ($product_id) {
+            $product = wc_get_product($product_id);
+        } else {
+            $product = new WC_Product_Simple();
+            $product->set_sku($sku);
+        }
+
+        $product->set_name($name ?: 'Товар');
+        $product->set_status('publish');
+
+        // ===== 6. Размеры =====
+        if ($width)  $product->set_width($width);
+        if ($length) $product->set_length($length);
+        if ($height) $product->set_height($height);
+
+        // ===== 7. Атрибуты (Характеристики) =====
+        $attributes = [];
+
+        // <ХарактеристикиТовара>
+        if (isset($offer->ХарактеристикиТовара->ХарактеристикаТовара)) {
+            foreach ($offer->ХарактеристикиТовара->ХарактеристикаТовара as $attr) {
+                $attr_name = (string)$attr->Наименование;
+                $attr_value = (string)$attr->Значение;
+
+                if ($attr_name && $attr_value) {
+                    $attributes[$attr_name] = $attr_value;
+                }
+            }
+        }
+
+        // <ЗначенияСвойств>
+        if (isset($offer->ЗначенияСвойств->ЗначенияСвойства)) {
+            foreach ($offer->ЗначенияСвойств->ЗначенияСвойства as $prop) {
+                $attr_name = (string)$prop->Ид;
+                $attr_value = (string)$prop->Значение;
+
+                if ($attr_name && $attr_value) {
+                    $attributes[$attr_name] = $attr_value;
+                }
+            }
+        }
+
+        // ===== 8. Запись атрибутов =====
+        if ($attributes) {
+
+            $product_attributes = [];
+
+            foreach ($attributes as $attr_name => $attr_value) {
+
+                $taxonomy = 'pa_' . sanitize_title($attr_name);
+
+                if (!taxonomy_exists($taxonomy)) {
+                    register_taxonomy(
+                        $taxonomy,
+                        'product',
+                        [
+                            'label' => $attr_name,
+                            'public' => true,
+                            'hierarchical' => true,
+                            'show_ui' => true
+                        ]
+                    );
+                }
+
+                wp_set_object_terms($product->get_id(), $attr_value, $taxonomy);
+
+                $product_attributes[$taxonomy] = [
+                    'name' => $taxonomy,
+                    'value' => $attr_value,
+                    'is_visible' => 1,
+                    'is_variation' => 0,
+                    'is_taxonomy' => 1
+                ];
+            }
+
+            $product->set_attributes($product_attributes);
+        }
+
+        // ===== 9. Сохраняем =====
+        $product->save();
+
+        // ===== 10. Картинка =====
+        if ($image) {
+
+            require_once ABSPATH . 'wp-admin/includes/media.php';
+            require_once ABSPATH . 'wp-admin/includes/file.php';
+            require_once ABSPATH . 'wp-admin/includes/image.php';
+
+            $image_id = media_sideload_image($image, $product->get_id(), null, 'id');
+
+            if (!is_wp_error($image_id)) {
+                $product->set_image_id($image_id);
+                $product->save();
+            }
+        }
+
+        error_log("Импорт: {$sku}");
+    }
+
+    echo 'Импорт завершён';
+}
+
+// запуск
+add_action('admin_post_run_xml_import', 'xml_woo_import_1c');
