@@ -465,4 +465,42 @@ function clean_duplicate_products() {
     }
 
     echo "Очистка завершена";
+}😎
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<?php
+require_once('wp-load.php');
+
+$args = array(
+    'post_type'      => 'attachment',
+    'post_mime_type' => 'image',
+    'posts_per_page' => -1,
+    'post_status'    => 'inherit'
+);
+
+$images = get_posts($args);
+
+foreach ($images as $image) {
+    wp_delete_attachment($image->ID, true); // true = удалить навсегда
 }
+
+echo "Все изображения удалены.";
+?>
