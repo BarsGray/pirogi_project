@@ -1,5 +1,93 @@
 <?php
 
+
+.ios-indicator {
+  transition:
+    transform 0.6s cubic-bezier(0.22, 1, 0.36, 1),
+    width 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+
+
+
+
+
+
+
+
+
+const dots = document.querySelector('.slick-dots');
+
+const indicator = document.createElement('div');
+indicator.classList.add('ios-indicator');
+dots.appendChild(indicator);
+
+function moveIndicator(index) {
+  const dot = dots.querySelectorAll('li')[index];
+  const rect = dot.getBoundingClientRect();
+  const parentRect = dots.getBoundingClientRect();
+
+  const x = rect.left - parentRect.left;
+
+  // iOS эффект: чуть расширяется в движении
+  indicator.style.width = '18px';
+
+  indicator.style.transform =
+    `translate(${x}px, -50%)`;
+}
+
+$('.slider').on('init afterChange', function (e, slick, current) {
+  moveIndicator(current || 0);
+});
+
+
+
+
+
+
+.slick-dots {
+  position: relative;
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  align-items: center;
+}
+
+/* точки */
+.slick-dots li button:before {
+  font-size: 10px;
+  opacity: 0.3;
+}
+
+/* скрываем стандартный active */
+.slick-dots .slick-active button:before {
+  opacity: 0.3;
+}
+
+/* iOS капсула */
+.ios-indicator {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  left: 0;
+
+  height: 10px;
+  width: 10px;
+  background: black;
+  border-radius: 20px;
+
+  transition:
+    transform 0.55s cubic-bezier(0.34, 1.56, 0.64, 1),
+    width 0.25s ease;
+}
+
+
+
+
+
+
+
+
 const el = document.querySelector('.tabs');
 
 let target = 0;
