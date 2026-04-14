@@ -1,441 +1,29 @@
 <?php
 
 
-.ios-indicator {
-  transition:
-    transform 0.6s cubic-bezier(0.22, 1, 0.36, 1),
-    width 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
-}
-
-
-
-
-
-
-
-
-
-
-const dots = document.querySelector('.slick-dots');
-
-const indicator = document.createElement('div');
-indicator.classList.add('ios-indicator');
-dots.appendChild(indicator);
-
-function moveIndicator(index) {
-  const dot = dots.querySelectorAll('li')[index];
-  const rect = dot.getBoundingClientRect();
-  const parentRect = dots.getBoundingClientRect();
-
-  const x = rect.left - parentRect.left;
-
-  // iOS эффект: чуть расширяется в движении
-  indicator.style.width = '18px';
-
-  indicator.style.transform =
-    `translate(${x}px, -50%)`;
-}
-
-$('.slider').on('init afterChange', function (e, slick, current) {
-  moveIndicator(current || 0);
-});
-
-
-
-
-
-
 .slick-dots {
   position: relative;
   display: flex;
   justify-content: center;
-  gap: 10px;
-  align-items: center;
+  gap: 12px;
 }
 
-/* точки */
-.slick-dots li button:before {
-  font-size: 10px;
-  opacity: 0.3;
-}
-
-/* скрываем стандартный active */
-.slick-dots .slick-active button:before {
-  opacity: 0.3;
-}
-
-/* iOS капсула */
 .ios-indicator {
   position: absolute;
   top: 50%;
-  transform: translateY(-50%);
   left: 0;
 
-  height: 10px;
   width: 10px;
+  height: 10px;
   background: black;
-  border-radius: 20px;
+  border-radius: 50%;
 
-  transition:
-    transform 0.55s cubic-bezier(0.34, 1.56, 0.64, 1),
-    width 0.25s ease;
+  transform: translate(0, -50%);
+  transition: transform 0.4s ease;
 }
 
 
 
-
-
-
-
-
-const el = document.querySelector('.tabs');
-
-let target = 0;
-let current = 0;
-
-el.addEventListener('wheel', (e) => {
-  e.preventDefault();
-  target += e.deltaY;
-}, { passive: false });
-
-function animate() {
-  current += (target - current) * 0.15; // плавность
-
-  el.scrollLeft = current;
-  requestAnimationFrame(animate);
-}
-
-animate();
-
-
-/*
-Plugin Name: XML WooCommerce Import by ID
-Description: Импорт товаров из XML с русскими тегами, используя <Ид> как SKU
-Version: 1.1
-Author: Your Name
-*/
-
-if (!defined('ABSPATH')) exit;
-
-// ==================== Функция импорта ====================
-function xml_woo_import_run() {
-
-    $file = WP_CONTENT_DIR . '/uploads/products.xml';
-
-    if (!file_exists($file)) {
-        wp_die('Файл XML не найден!');
-    }
-
-
-
-
-
-function delete_all_products() {
-
-    $products = get_posts([
-        'post_type' => 'product',
-        'numberposts' => -1,
-        'post_status' => 'any',
-    ]);
-
-    foreach ($products as $product) {
-        wp_delete_post($product->ID, true); // true = навсегда
-    }
-
-    echo "Все товары удалены";
-}
-
-
-add_action('init', 'delete_all_products');
-    libxml_use_internal_errors(true);
-    $xml = simplexml_load_file($file);
-
-    if (!$xml) {
-        wp_die('Ошибка загрузки XML');
-    }
-
-    foreach ($xml->Товары->Товар as $item) {
-
-        // ===== 1. Основные поля =====
-        $sku = (string)$item->{'Ид'}; // используем Ид как SKU
-        $name = (string)$item->{'наименование'};
-        $description = (string)$item->{'Описание'};
-        $weight = (string)$item->{'вес'};
-        $length = (string)$item->{'Длина'};
-        $width = (string)$item->{'Ширина'};
-        $height = (string)$item->{'высота'};
-
-        if (empty($sku)) continue; // пропускаем если нет Ид
-
-        // ===== 2. Проверка существующего товара =====
-        $product_id = wc_get_product_id_by_sku($sku);
-
-        if ($product_id) {
-            $product = wc_get_product($product_id);
-        } else {
-            $product = new WC_Product_Simple();
-            $product->set_sku($sku);
-        }
-
-        $product->set_name($name ?: 'Товар');
-        $product->set_description($description ?: '');
-        $product->set_status('publish');
-
-        // ===== 3. Размеры и вес =====
-        if ($weight) $product->set_weight($weight);
-        if ($length) $product->set_length($length);
-        if ($width) $product->set_width($width);
-        if ($height) $product->set_height($height);
-
-        // ===== 4. Категории =====
-        foreach ($item->группы->Ид as $group) {
-            $cat_name = (string)$group;
-            if (!$cat_name) continue;
-
-            $term = term_exists($cat_name, 'product_cat');
-            if (!$term) $term = wp_insert_term($cat_name, 'product_cat');
-            if (!is_wp_error($term)) {
-                wp_set_object_terms($product->get_id(), (int)$term['term_id'], 'product_cat', true);
-            }
-        }
-
-        // ===== 5. Атрибуты =====
-        $attributes = [];
-
-        if (isset($item->значениеСвойств->значениеСвойства)) {
-            foreach ($item->значениеСвойств->значениеСвойства as $prop) {
-                $attr_name = (string)$prop->ид; // или <Наименование>
-                $attr_value = (string)$prop->значение;
-                if ($attr_name && $attr_value) $attributes[$attr_name] = $attr_value;
-            }
-        }
-
-        if ($attributes) {
-            $product_attributes = [];
-            foreach ($attributes as $attr_name => $attr_value) {
-                $taxonomy = 'pa_' . sanitize_title($attr_name);
-
-                if (!taxonomy_exists($taxonomy)) {
-                    register_taxonomy(
-                        $taxonomy,
-                        'product',
-                        [
-                            'label' => $attr_name,
-                            'public' => true,
-                            'hierarchical' => true,
-                            'show_ui' => true,
-                            'query_var' => true,
-                        ]
-                    );
-                }
-
-                wp_set_object_terms($product->get_id(), $attr_value, $taxonomy);
-                $product_attributes[$taxonomy] = [
-                    'name' => $taxonomy,
-                    'value' => $attr_value,
-                    'is_visible' => 1,
-                    'is_variation' => 0,
-                    'is_taxonomy' => 1
-                ];
-            }
-
-            $product->set_attributes($product_attributes);
-        }
-
-        // ===== 6. Изображение =====
-        if (isset($item->{'картинка'}) && !empty((string)$item->{'картинка'})) {
-            $image_url = (string)$item->{'картинка'};
-
-            require_once ABSPATH . 'wp-admin/includes/media.php';
-            require_once ABSPATH . 'wp-admin/includes/file.php';
-            require_once ABSPATH . 'wp-admin/includes/image.php';
-
-            $image_id = media_sideload_image($image_url, $product->get_id(), null, 'id');
-            if (!is_wp_error($image_id)) {
-                $product->set_image_id($image_id);
-            }
-        }
-
-        $product->save();
-    }
-
-    echo 'Импорт завершён!';
-}
-
-// ==================== Защищённый запуск через админку ====================
-add_action('admin_post_run_xml_import', 'xml_woo_import_run');
-
-<?php
-get_footer();
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-<?php
-/*
-Plugin Name: XML Import 1C WooCommerce
-*/
-
-if (!defined('ABSPATH')) exit;
-
-function xml_woo_import_1c() {
-
-    $file = WP_CONTENT_DIR . '/uploads/products.xml';
-
-    if (!file_exists($file)) {
-        wp_die('XML не найден');
-    }
-
-    $xml = simplexml_load_file($file);
-
-    if (!$xml) {
-        wp_die('Ошибка XML');
-    }
-
-    foreach ($xml->Предложения->Предложение as $offer) {
-
-        // ===== 1. SKU (Ид предложения) =====
-        $sku = (string)$offer->{'Ид'};
-        if (!$sku) continue;
-
-        // ===== 2. Название =====
-        $name = (string)$offer->{'Наименование'};
-
-        // ===== 3. Размеры =====
-        $width  = (string)$offer->{'Ширина'};
-        $length = (string)$offer->{'Длина'};
-        $height = (string)$offer->{'Высота'};
-
-        // ===== 4. Картинка =====
-        $image = (string)$offer->{'Картинка'};
-
-        // ===== 5. Проверка товара =====
-        $product_id = wc_get_product_id_by_sku($sku);
-
-        if ($product_id) {
-            $product = wc_get_product($product_id);
-        } else {
-            $product = new WC_Product_Simple();
-            $product->set_sku($sku);
-        }
-
-        $product->set_name($name ?: 'Товар');
-        $product->set_status('publish');
-
-        // ===== 6. Размеры =====
-        if ($width)  $product->set_width($width);
-        if ($length) $product->set_length($length);
-        if ($height) $product->set_height($height);
-
-        // ===== 7. Атрибуты (Характеристики) =====
-        $attributes = [];
-
-        // <ХарактеристикиТовара>
-        if (isset($offer->ХарактеристикиТовара->ХарактеристикаТовара)) {
-            foreach ($offer->ХарактеристикиТовара->ХарактеристикаТовара as $attr) {
-                $attr_name = (string)$attr->Наименование;
-                $attr_value = (string)$attr->Значение;
-
-                if ($attr_name && $attr_value) {
-                    $attributes[$attr_name] = $attr_value;
-                }
-            }
-        }
-
-        // <ЗначенияСвойств>
-        if (isset($offer->ЗначенияСвойств->ЗначенияСвойства)) {
-            foreach ($offer->ЗначенияСвойств->ЗначенияСвойства as $prop) {
-                $attr_name = (string)$prop->Ид;
-                $attr_value = (string)$prop->Значение;
-
-                if ($attr_name && $attr_value) {
-                    $attributes[$attr_name] = $attr_value;
-                }
-            }
-        }
-
-        // ===== 8. Запись атрибутов =====
-        if ($attributes) {
-
-            $product_attributes = [];
-
-            foreach ($attributes as $attr_name => $attr_value) {
-
-                $taxonomy = 'pa_' . sanitize_title($attr_name);
-
-                if (!taxonomy_exists($taxonomy)) {
-                    register_taxonomy(
-                        $taxonomy,
-                        'product',
-                        [
-                            'label' => $attr_name,
-                            'public' => true,
-                            'hierarchical' => true,
-                            'show_ui' => true
-                        ]
-                    );
-                }
-
-                wp_set_object_terms($product->get_id(), $attr_value, $taxonomy);
-
-                $product_attributes[$taxonomy] = [
-                    'name' => $taxonomy,
-                    'value' => $attr_value,
-                    'is_visible' => 1,
-                    'is_variation' => 0,
-                    'is_taxonomy' => 1
-                ];
-            }
-
-            $product->set_attributes($product_attributes);
-        }
-
-        // ===== 9. Сохраняем =====
-        $product->save();
-
-        // ===== 10. Картинка =====
-        if ($image) {
-
-            require_once ABSPATH . 'wp-admin/includes/media.php';
-            require_once ABSPATH . 'wp-admin/includes/file.php';
-            require_once ABSPATH . 'wp-admin/includes/image.php';
-
-            $image_id = media_sideload_image($image, $product->get_id(), null, 'id');
-
-            if (!is_wp_error($image_id)) {
-                $product->set_image_id($image_id);
-                $product->save();
-            }
-        }
-
-        error_log("Импорт: {$sku}");
-    }
-
-    echo 'Импорт завершён';
-}
-
-// запуск
-add_action('admin_post_run_xml_import', 'xml_woo_import_1c');
 
 
 😎
@@ -449,166 +37,36 @@ add_action('admin_post_run_xml_import', 'xml_woo_import_1c');
 
 
 
-// ===== Атрибуты (ПРАВИЛЬНО) =====
-$attributes = [];
 
-if (isset($item->значениеСвойств->значениеСвойства)) {
 
-    foreach ($item->значениеСвойств->значениеСвойства as $prop) {
+$('.slider').on('init', function (e, slick) {
 
-        $attr_name = (string)$prop->ид; // или Наименование
-        $attr_value = (string)$prop->значение;
+  const dots = slick.$dots[0];
 
-        if (!$attr_name || !$attr_value) continue;
+  const indicator = document.createElement('div');
+  indicator.classList.add('ios-indicator');
+  dots.appendChild(indicator);
 
-        $slug = wc_sanitize_taxonomy_name($attr_name);
+  const gap = 12;
+  const dotSize = 10;
+  const step = dotSize + gap;
 
-        // ===== создаём глобальный атрибут если нет =====
-        $attribute_id = wc_attribute_taxonomy_id_by_name($slug);
+  function move(index) {
+    indicator.style.transform =
+      `translate(${index * step}px, -50%)`;
+  }
 
-        if (!$attribute_id) {
-            $attribute_id = wc_create_attribute([
-                'name' => $attr_name,
-                'slug' => $slug,
-                'type' => 'select',
-                'order_by' => 'menu_order',
-                'has_archives' => false,
-            ]);
+  move(0);
 
-            delete_transient('wc_attribute_taxonomies');
-        }
+  $(this).on('afterChange', function (e, slick, current) {
+    move(current);
+  });
 
-        $taxonomy = 'pa_' . $slug;
+});
 
-        // регистрируем таксономию если ещё нет
-        if (!taxonomy_exists($taxonomy)) {
-            register_taxonomy(
-                $taxonomy,
-                'product',
-                [
-                    'hierarchical' => true,
-                    'show_ui' => false,
-                    'query_var' => true,
-                    'rewrite' => false,
-                ]
-            );
-        }
+$('.slider').slick({
+  dots: true,
+  arrows: false
+});
 
-        // добавляем значение
-        wp_set_object_terms($product->get_id(), $attr_value, $taxonomy, true);
-
-        $attributes[$taxonomy] = [
-            'name' => $taxonomy,
-            'value' => '',
-            'is_visible' => 1,
-            'is_variation' => 0,
-            'is_taxonomy' => 1,
-        ];
-    }
-
-    $product->set_attributes($attributes);
-}😎
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-function clean_duplicate_products() {
-
-    $products = get_posts([
-        'post_type' => 'product',
-        'numberposts' => -1,
-    ]);
-
-    $by_sku = [];
-    $by_name = [];
-
-    foreach ($products as $post) {
-
-        $product = wc_get_product($post->ID);
-        $sku = $product->get_sku();
-        $name = $post->post_title;
-
-        // ===== 1. Удаляем без SKU =====
-        if (!$sku) {
-            wp_delete_post($post->ID, true);
-            continue;
-        }
-
-        // ===== 2. Дубли по SKU =====
-        if (isset($by_sku[$sku])) {
-            wp_delete_post($post->ID, true);
-            continue;
-        }
-
-        $by_sku[$sku] = $post->ID;
-
-        // ===== 3. Дубли по названию =====
-        if (isset($by_name[$name])) {
-            // если уже есть товар с таким именем — удаляем
-            wp_delete_post($post->ID, true);
-            continue;
-        }
-
-        $by_name[$name] = $post->ID;
-    }
-
-    echo "Очистка завершена";
-}😎
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-<?php
-require_once('wp-load.php');
-
-$args = array(
-    'post_type'      => 'attachment',
-    'post_mime_type' => 'image',
-    'posts_per_page' => -1,
-    'post_status'    => 'inherit'
-);
-
-$images = get_posts($args);
-
-foreach ($images as $image) {
-    wp_delete_attachment($image->ID, true); // true = удалить навсегда
-}
-
-echo "Все изображения удалены.";
 ?>
