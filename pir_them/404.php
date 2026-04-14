@@ -1,5 +1,25 @@
 <?php
 
+const el = document.querySelector('.tabs');
+
+let target = 0;
+let current = 0;
+
+el.addEventListener('wheel', (e) => {
+  e.preventDefault();
+  target += e.deltaY;
+}, { passive: false });
+
+function animate() {
+  current += (target - current) * 0.15; // плавность
+
+  el.scrollLeft = current;
+  requestAnimationFrame(animate);
+}
+
+animate();
+
+
 /*
 Plugin Name: XML WooCommerce Import by ID
 Description: Импорт товаров из XML с русскими тегами, используя <Ид> как SKU
